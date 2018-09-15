@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+        li {
+            display: inline-block;
+        }
+
+        /*button*/
+        button, input[type="button"] {
+            background-color: #5AA6ED;
+            color: #ffffff !important;
+            -webkit-appearance: none;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            border-radius: 4px;
+            border: 0;
+            cursor: pointer;
+            text-align: center;
+        }
+
+            button:hover, input[type="button"]:active {
+                background-color: #71b2f0;
+                /*box-shadow:*/
+            }
+
+            button:active, input[type="button"]:active {
+                background-color: #439aea;
+            }
+        /*textarea*/
+        textarea, input[type="text"] {
+            background: rgba(0, 0, 0, 0.075);
+            border-color: rgba(0, 0, 0, 0.15);
+            color: #000;
+            border-radius: 4px;
+            border: solid 1px;
+        }
+
+        textarea {
+            user-select: text;
+            flex-direction: column;
+            resize: auto;
+            cursor: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+            input[type="text"]:focus, textarea:focus {
+                border-color: #5AA6ED;
+                box-shadow: 0 0 0 1px #5AA6ED;
+            }
+    </style>
+    <script type="text/javascript" src="popup.js"></script>
+</head>
+<body style="width: 400px;">
+    <div>
+        <fieldset>
+            <legend>
+                <input type="checkbox" id="for_current_domain" checked>
+                <label for="for_current_domain">For current domain</label>
+            </legend>
+            <textarea id="user_agents" placeholder="Enter user-agents:" style="width: 100%;"></textarea>
+            <br />
+            <div style="text-align: center;">
+                <button id="user_agents_set" style="width: 70%;">Set user-agents</button>
+                <br /><div style="height: 3px;"></div>
+                <button id="cookie_clear" style="width: 70%;">Clear cookie for current tab domain</button>
+                <br /><div style="height: 3px;"></div>
+                <button id="storage_clear" style="width: 70%;">Clear storage for current tab domain</button>
+                <br /><div style="height: 3px;"></div>
+                <button id="storage_cookie_clear" style="width: 70%;">Clear cookies and storage for current tab domain</button>
+                <br /><div style="height: 3px;"></div>
+                <button id="clear_plugin_data_for_domen" style="width: 70%; position:center">Clear timezone, user-agent,... data for current tab domain</button>
+                <br /><div style="height: 3px;"></div>
+            </div>
+            <div>
+                <input type="checkbox" id="is_iframe" checked>
+                <label for="is_iframe">Enable iframe settings</label>
+            </div>
+            <fieldset>
+                <legend>
+                    <input type="checkbox" id="tab">
+                    <label for="tab" id="tab_label">Main frame</label>
+                </legend>
+                <div id="main_tab" style="display:block">
+                    <div>
+                        <input type="checkbox" id="use_only_en_lang" checked>
+                        <label for="use_only_en_lang">Use only english lang</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_idb" checked>
+                        <label for="disable_indexed_db">Disable indexedDB API</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_ac" checked>
+                        <label for="disable_ac">Disable application cache API</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_ls" checked>
+                        <label for="disable_ls">Disable local storage</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_wrtc" checked>
+                        <label for="disable_wrtc">Disable WebRTC</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_canvas" checked>
+                        <label for="disable_canvas">Disable canvas</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_wsql" checked>
+                        <label for="disable_wsql">Disable WebSQL</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_sw" checked>
+                        <label for="disable_sw">Disable service worker API</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_worker" checked>
+                        <label for="disable_worker">Disable worker</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_shared_worker" checked>
+                        <label for="disable_shared_worker">Disable shared worker</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_intl" checked>
+                        <label for="disable_intl">Disable internationalization API</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_referrer" checked>
+                        <label for="disable_referrer">Disable referrer</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_beacon" checked>
+                        <label for="disable_beacon">Disable beacon</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_ajax" checked>
+                        <label for="disable_ajax">Disable AJAX</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_webasm" checked>
+                        <label for="disable_webasm">Disable WebAssembly</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_cache" checked>
+                        <label for="disable_cache">Disable cache(can be not work on some browser)</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="send_no_cache" checked>
+                        <label for="send_no_cache">Send header "no-cache"(can be used as fingerprint)</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_cache_strong" checked>
+                        <label for="disable_cache_strong">Disable cache strong(clear all cache)</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_sarrbuff" checked>
+                        <label for="disable_sarrbuff">Disable shared array buffer</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="disable_cookie" checked>
+                        <label for="disable_cookie">Disable cookie</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="randomize_time_counters" checked>
+                        <label for="randomize_time_counters">Is use time randomizer</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="use_direct_url" checked>
+                        <label for="use_direct_url">Use direct URL</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="randomize_each" checked>
+                        <label for="randomize_each">Randomize timezone, user-agent,... data when each visit</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="canvas_randomizer" checked>
+                        <label for="canvas_randomizer">Randomize 2d canvas</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="webgl_randomizer" checked>
+                        <label for="webgl_randomizer">WebGL randomizer</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="rand_time_off" checked>
+                        <label for="rand_time_off">Use random time offset</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="rand_timezone" checked>
+                        <label for="rand_timezone">Use random timezone</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="connection_close" checked>
+                        <label for="connection_close">Connection close on each request</label>
+                    </div>
+                </div>
+            </fieldset>
+        </fieldset>
+        <div style="text-align: center;">
+            <button id="all_storage_cookie_clear" style="width: 70%;">Clear all cookie and local storage</button>
+            <br /><div style="height: 3px;"></div>
+            <button id="cache_clear" style="width: 70%;">Clear all browser cache</button>
+            <br /><div style="height: 3px;"></div>
+            <button id="all_data_clear" style="width: 70%;">Clear all browser data</button>
+            <br /><div style="height: 3px;"></div>
+            <button id="clear_plugin_dmn_data" style="width: 70%;">Clear timezone, user-agent,... data for all domains</button>
+            <br /><div style="height: 3px;"></div>
+            <button id="set_defaults" style="width: 70%; position:center">Set default settings for all domains</button>
+        </div>
+    </div>
+</body>
+</html>
