@@ -238,6 +238,7 @@ function Domains() {
             ["send_no_cache", false],               //26
             ["disable_cache_strong", false],        //27
             ["clear_plugin_list", false],           //28
+            ["disable_popup", false],               //29
     ]);
 
     var domain_data = {};

@@ -580,7 +580,59 @@
                         }
                     });
                 }
-
+                if((flags&(1 << 16))&&win.document) {
+                    var window_open = win.open;
+                    var eventHandler = function (e) {
+                        let targetElem = e.target;
+                        if (targetElem.nodeName.toLowerCase() == "a" || ((targetElem = targetElem.parentNode) && targetElem.nodeName.toLowerCase() == "a")) {
+                            let href = targetElem.href;
+                            let innerText = targetElem.innerText;
+                            let locationTopDomain = self_domain;
+                            let targetUrl = null;
+                            if (isURL(innerText) && !/^((((\w|\d)((\w|\d|-)*(\w|\d))?\.)+(\w|\d)+)|localhost|((\d{1,3}\.){3}\d{1,3}))$/i.test(innerText) && !innerText.endsWith("...")) {
+                                if (!/^(https|http):\/\//i.test(innerText))
+                                    innerText = "http://" + innerText;
+                                if (topDomainFromURL(innerText) != locationTopDomain) {
+                                    targetElem.href = innerText;
+                                    targetUrl = innerText;
+                                }
+                            }
+                            if (targetUrl == null && typeof (href) == "string" && isURL(href)) {
+                                if (topDomainFromURL(href) == locationTopDomain)
+                                    return;
+                                targetUrl = href;
+                            }
+                            if (targetUrl != null) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (e.type == "mouseup" && e.button == 0) {
+                                    if (targetElem.target == "_blank") {
+                                        window_open(targetUrl, '_blank');
+                                    } else {
+                                        disable_beacon = true;
+                                        try { win.XMLHttpRequest.prototype.open = function () { }; delete win.XMLHttpRequest; } catch (_) { }
+                                        win.location = targetUrl;
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    win.document.addEventListener("mousedown", eventHandler, true);
+                    win.document.addEventListener("mouseup", eventHandler, true);
+                    win.document.addEventListener("click", eventHandler, true);
+                    var originalWindowListener = win.addEventListener;
+                    win.addEventListener = function addEventListener(type, handler, is_top) {
+                        if (type == "unload") {
+                            console.log("Paranoix: ignore unload event");
+                            return;
+                        }
+                        return originalWindowListener.apply(this, arguments);
+                    }
+                    win.addEventListener.toString = function () { return "function addEventListener() { [native code] }"; };
+                }
+                if ((param.flags&(1<<29))&&win.document) {
+                    setObjectPropertys(win, { open: undefined });
+                }
                 if (param.use_time_offset || param.use_timezon_name || param.use_timezon) {
                     var orig_TimezoneOffset = (new win.Date()).getTimezoneOffset();
                     var orig_toLocaleString = getOriginalProperty(win.Date, "toLocaleString");
@@ -698,56 +750,6 @@
                 windowSetInfo(param.flags, param.is_iframe, self);
                 if (param.flags&(1<<12)) {
                     setObjectPropertys(self, {HTMLDocument:{ referrer: ""}});
-                }
-                if ((param.flags&(1<<16)) && self.document) {
-                    var window_open = self.open;
-                    var eventHandler = function (e) {
-                        let targetElem = e.target;
-                        if(targetElem.nodeName.toLowerCase() == "a" || ((targetElem = targetElem.parentNode) && targetElem.nodeName.toLowerCase() == "a")){
-                            let href = targetElem.href;
-                            let innerText = targetElem.innerText;
-                            let locationTopDomain = self_domain;
-                            let targetUrl = null;
-                            if (isURL(innerText) && !/^((((\w|\d)((\w|\d|-)*(\w|\d))?\.)+(\w|\d)+)|localhost|((\d{1,3}\.){3}\d{1,3}))$/i.test(innerText) && !innerText.endsWith("...")) {
-                                if(!/^(https|http):\/\//i.test(innerText))
-                                    innerText = "http://" + innerText;
-                                if(topDomainFromURL(innerText) != locationTopDomain){
-                                    targetElem.href = innerText;
-                                    targetUrl = innerText;
-                                }
-                            }
-                            if(targetUrl == null && typeof(href) == "string" && isURL(href)){
-                                if(topDomainFromURL(href) == locationTopDomain)
-                                    return;
-                                targetUrl = href;
-                            }
-                            if(targetUrl != null){
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if(e.type == "mouseup" && e.button == 0){
-                                    if(targetElem.target == "_blank"){
-                                        window_open(targetUrl, '_blank');
-                                    } else{
-                                        disable_beacon = true;
-                                        try{ self.XMLHttpRequest.prototype.open = function(){}; delete self.XMLHttpRequest;} catch(_){}
-                                        self.location = targetUrl;
-                                    }
-                                }
-                            }
-                        }
-                    };
-                    self.document.addEventListener("mousedown", eventHandler, true);
-                    self.document.addEventListener("mouseup", eventHandler, true);
-                    self.document.addEventListener("click", eventHandler, true);
-                    var originalWindowListener = self.addEventListener;
-                    self.addEventListener = function (type, handler, is_top){
-                        if(type == "unload"){
-                            console.log("Paranoix: ignore unload event");
-                            return;
-                        }
-                        return originalWindowListener.apply(this, arguments);
-                    }
-                    self.addEventListener.toString = function () { return "function addEventListener() { [native code] }"; };
                 }
             }
             if(self.document){

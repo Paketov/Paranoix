@@ -359,6 +359,7 @@ window.addEventListener(
                             bindBackgroundSettings("disable_cache_strong");
                             bindBackgroundSettings("send_no_cache");
                             bindBackgroundSettings("clear_plugin_list");
+                            bindBackgroundSettings("disable_popup");
 
                             bindBackgroundSettings("is_iframe");
 
@@ -392,7 +393,7 @@ window.addEventListener(
                             bindBackgroundSettings("iframe_disable_cache_strong");
                             bindBackgroundSettings("iframe_send_no_cache");
                             bindBackgroundSettings("iframe_clear_plugin_list");
-
+                            bindBackgroundSettings("iframe_disable_popup");
                             setOrGetSetting("user_agents", null,  function (r) {
                                 $("user_agents").value = r.join("\n");
                             });
