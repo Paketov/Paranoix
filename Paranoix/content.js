@@ -75,7 +75,7 @@
     function insertCodeTemplate(param) {
         var injectFunc = function injectFunc(param) {
 
-            console.log("UserAgentRemover: script enjected for " + self.location);
+            console.log("Paranoix: script enjected for " + self.location);
             var disable_beacon = false;
             function isHasBeenApply(root) { return (root.navigator.getBattery == undefined) && (root.geolocation == undefined); }
             function isWorker(root) { return root.toString().search("DedicatedWorkerGlobalScope") != -1; }
@@ -206,7 +206,7 @@
             function isNotSameDomainIframe(url) { return (url != "") && (url != "about:blank") && (topDomainFromURL(url) != self_domain); }
 
             function windowSetInfo(flags, is_iframe, win) {
-                console.log("UserAgentRemover: windowSetInfo " + win.location.href + ((is_iframe)?" iframe": " main_frame"));
+                console.log("Paranoix: windowSetInfo " + win.location.href + ((is_iframe) ? " iframe" : " main_frame"));
                 let ud = undefined;
                 setObjectPropertys(win, {
                     navigator: {
@@ -267,7 +267,14 @@
                         navigator: { mediaDevices: ud }
                     });
                 }
-
+                if (flags&(1<<28)){ //clear_plugin_list
+                    setObjectPropertys(win, {
+                        navigator: {
+                            plugins: [],
+                            mimeTypes: ud
+                        }
+                    });
+                }
                 if (flags&1) {
                     setObjectPropertys(win, {
                         navigator: {
@@ -684,7 +691,7 @@
                         }
                     });
                 }
-                console.log("UserAgentRemover: windowSetInfo " + win.location.href + " end");
+                console.log("Paranoix: windowSetInfo " + win.location.href + " end");
             }
 
             if (!isHasBeenApply(self) || isWorker(self)){
@@ -701,7 +708,7 @@
                             let innerText = targetElem.innerText;
                             let locationTopDomain = self_domain;
                             let targetUrl = null;
-                            if(isURL(innerText) && !/^((((\w|\d)((\w|\d|-)*(\w|\d))?\.)+(\w|\d)+)|localhost|((\d{1,3}\.){3}\d{1,3}))$/i.test(innerText)){
+                            if (isURL(innerText) && !/^((((\w|\d)((\w|\d|-)*(\w|\d))?\.)+(\w|\d)+)|localhost|((\d{1,3}\.){3}\d{1,3}))$/i.test(innerText) && !innerText.endsWith("...")) {
                                 if(!/^(https|http):\/\//i.test(innerText))
                                     innerText = "http://" + innerText;
                                 if(topDomainFromURL(innerText) != locationTopDomain){
@@ -735,7 +742,7 @@
                     var originalWindowListener = self.addEventListener;
                     self.addEventListener = function (type, handler, is_top){
                         if(type == "unload"){
-                            console.log("UserAgentRemover: ignore unload event");
+                            console.log("Paranoix: ignore unload event");
                             return;
                         }
                         return originalWindowListener.apply(this, arguments);
@@ -789,7 +796,7 @@
                     }
                 });
             }
-            console.log("UserAgentRemover: enjected script executed");
+            console.log("Paranoix: enjected script executed");
         };
         insertPageScriptEx(injectFunc, param);
     }
@@ -799,7 +806,7 @@
         url: window.location.host
     });
 
-    console.log("UserAgentRemover: Sync data recived from background");
+    console.log("Paranoix: Sync data recived from background");
     if (response != null) {
         let user_agent = response[0];
         let platform = null;
@@ -825,7 +832,7 @@
             flags_iframe: response[8]
         });
 
-        console.log("UserAgentRemover: script executed");
+        console.log("Paranoix: script executed");
     }
 })();
 

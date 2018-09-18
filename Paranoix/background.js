@@ -237,6 +237,7 @@ function Domains() {
             ["disable_cache", false],               //25
             ["send_no_cache", false],               //26
             ["disable_cache_strong", false],        //27
+            ["clear_plugin_list", false],           //28
     ]);
 
     var domain_data = {};
@@ -426,7 +427,7 @@ function Domains() {
             return null;
         });
     }
-    this.getForContentScript = function (sender) {
+    this.getSettingsForContentScript = function (sender) {
         let tab = sender.tab;
         let time_offset = null;
         let timezone = null;
@@ -444,14 +445,14 @@ function Domains() {
             domains.delete(sender);
             domain = domains.get(sender);
         }
-        if (flags.obj.use_random_timezone) {
+        if (flags.obj.rand_timezone) {
             timezone = (Math.abs(domain.tzh) * 60) + domain.tzm;
             if (domain.tzh < 0)
                 timezone = -timezone;
             timezone_name = domain.tzn;
         }
 
-        if (flags.obj.use_random_timeoff) {
+        if (flags.obj.rand_time_off) {
             let seconds_interval = 1000.0 * 60.0 * 3.0;
             time_offset = Math.floor(Math.random() * seconds_interval) - Math.floor(seconds_interval / 2);
         }
@@ -634,7 +635,7 @@ function clearLocalStorageAndCookieForSite(request) {
 
 
 
-function sendSyncResponceDataForContentScript(content_data, data_for_content) {
+function contentScriptResponceSync(content_data, data_for_content) {
     function StringHash(Str) {
         var hash = 5381, i = Str.length;
         while (i)
@@ -649,13 +650,13 @@ function sendSyncResponceDataForContentScript(content_data, data_for_content) {
     for (let i = 0, l = encode_data.length; i < l; i++)
         encoded_data += String.fromCharCode(encode_data.charCodeAt(i) ^ priv_content_key);
     encoded_data = btoa(encoded_data);
-    chrome.cookies.set(
-        {
+    try {
+        chrome.cookies.set({
             url: content_data.__content_url,
             name: "_usr_ag_chr_" + content_key.toString(16),
             value: encoded_data
-        }
-    );
+        });
+    } catch (e) { }
 }
 
 function __syncResponceClear(responce) {
@@ -809,8 +810,8 @@ function onMessageRecived(request, sender, sendResponse) {
 
     switch (request.type) {
         case "getUserAgent": {
-            var responseData = domains.getForContentScript(sender);
-            sendSyncResponceDataForContentScript(request, responseData);
+            var responseData = domains.getSettingsForContentScript(sender);
+            contentScriptResponceSync(request, responseData);
             sendResponse({});
         } break;
         case "clearCookieForSite": {
