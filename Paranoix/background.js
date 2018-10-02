@@ -207,11 +207,76 @@ function SyncTabInfo() {
 
 var tab_info = new SyncTabInfo();
 
+function BlockList(init_val) {
+    var as_text = "";
+    var as_list = [];
+
+    function _setAsList(lst) {
+        as_list = [];
+        let str = "";
+        for (let i = 0, l = lst.length; i < l; i++) {
+            let expr = lst[i];
+            if (!(expr instanceof Array))
+                expr = ["", expr];
+            else if ( expr.length < 2)
+                expr = ["", expr[0]];
+            as_list.push(expr);
+            if (expr[1] instanceof RegExp)
+                str += (((expr[0].length == 0)? "": (expr[0] + ", ")) + "/" + expr[1].source + "/" + expr[1].flags + (((i + 1) >= lst.length) ? "" : "\n"));
+            else
+                str += (((expr[0].length == 0) ? "" : (expr[0] + ", ")) + "\"" + expr[1] + "\"" + (((i + 1) >= lst.length) ? "" : "\n"));
+        }
+        as_text = str;
+    }
+    function _setAsText(text) {
+        let exprs = text.split(/[\r\n]+/);
+        let new_list = [];
+        as_text = "";
+        for (let i = 0, l = exprs.length; i < l; i++) {
+            let expr = exprs[i].split(/,[ ]*/);
+            if (expr.length < 2)
+                expr = ["", expr[0]];
+            if (expr[1].startsWith("/") && /\/[ig]*$/.test(expr[1])) {
+                let rexpr = expr[1].replace(/\/[ig]*$/, "").replace(/^\//, "");
+                let arg = expr[1].match(/\/([ig]*)$/)[1];
+                new_list.push([expr[0], new RegExp(rexpr, arg)]);
+            } else if (expr[1].startsWith("\"") && expr[1].endsWith("\"")) {
+                new_list.push([expr[0], expr[1].replace(/^"/, "").replace(/"$/, "")]);
+            }
+        }
+        _setAsList(new_list);
+    }
+
+    Object.defineProperty(this, 'text', {
+        get: function () { return as_text },
+        set: function (text) { _setAsText(text); return text; }
+    });
+    Object.defineProperty(this, 'list', {
+        get: function () { return as_list },
+        set: function (lst) { _setAsList(lst); return lst; }
+    });
+
+    if (init_val != null && init_val != undefined)
+        ((typeof (init_val) == "string") ? _setAsText : _setAsList)(init_val);
+
+    this.isBlock = function (str) {
+        for (let i = 0, l = as_list.length; i < l; i++) {
+            if (as_list[i][1] instanceof RegExp) {
+                if (as_list[i][1].test(str)) return true;
+            } else {
+                if (str.search(as_list[i][1]) != -1) return true;
+            }
+        }
+        return false;
+    }
+    this.clone = function () { return new BlockList(as_list) }
+}
+
 function Domains() {
     var default_bitfield_instance = new BitField([
             ["use_only_en_lang", true],             //0
-            ["rand_timezone", true],          //1
-            ["rand_time_off", true],           //2
+            ["rand_timezone", true],                //1
+            ["rand_time_off", true],                //2
             ["disable_idb", true],                  //3
             ["disable_sw", true],                   //4
             ["disable_ac", true],                   //5
@@ -225,7 +290,7 @@ function Domains() {
             ["canvas_randomizer", true],            //13
             ["webgl_randomizer", true],             //14
             ["disable_beacon", true],               //15
-            ["use_direct_url", true],               //16
+            ["use_direct_url", false],              //16
             ["disable_webasm", false],              //17
             ["disable_shared_worker", true],        //18
             ["disable_sarrbuff", true],//anti-spectre 19
@@ -239,13 +304,19 @@ function Domains() {
             ["disable_cache_strong", false],        //27
             ["clear_plugin_list", false],           //28
             ["disable_popup", false],               //29
+            ["use_direct_url2", false],             //30
     ]);
+
+    var default_block_list = new BlockList();
 
     var domain_data = {};
     var domain_settings = {
         "*": {
-            flags: default_bitfield_instance.clone(),
-            iframe_flags: null,
+            params: {
+                f: default_bitfield_instance.clone(),   //flags
+                bl: default_block_list.clone()          //block list
+            },
+            if_params: null,                            //iframe params
             user_agents: ["Mozilla/5.0 (Windows NT 10.0; Win32; x86) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36 OPR/44.0.2510.1218"]
         }
     };
@@ -254,6 +325,11 @@ function Domains() {
         function parseBitField(num) {
             let res = default_bitfield_instance.clone();
             res.num = num;
+            return res;
+        }
+        function parseBlockList(val) {
+            let res = default_block_list.clone();
+            res.text = val;
             return res;
         }
 
@@ -265,26 +341,25 @@ function Domains() {
             domain_settings = eval("(" + ds+ ")");
     }
 
-    function _get_dname(url_req) {
-        var url = null;
+    function _getUrlByObj(url_req){
         if (typeof (url_req) == "string") {
-            url = url_req;
+            return url_req;
         } else if ("tab" in url_req) {
-            url = url_req.tab.url;
+            return url_req.tab.url;
         } else if (url_req.tabId > 0 && url_req.type != "main_frame") {
-            try { url = tab_info.get(url_req.tabId).url; } catch (e) { url = url_req.url; }
+            try { return tab_info.get(url_req.tabId).url; } catch (e) { return url_req.url; }
         } else {
-            url = url_req.url;
+            return url_req.url;
         }
-        return Utils.topDomainFromURL(url);
     }
+
+    function _get_dname(url_req) { return Utils.topDomainFromURL(_getUrlByObj(url_req)); }
 
     function _isiframe(url_req) {
         if (typeof (url_req) == "string") 
             return false;
         return ("frameId" in url_req) && (url_req.frameId != 0) && (url_req.url != "about:blank") && (Utils.topDomainFromURL(url_req.url) != _get_dname(url_req));
     }
-
 
     this.get = function(url) {
         let dname = _get_dname(url);
@@ -348,33 +423,41 @@ function Domains() {
         let d = domain_settings[(dname in domain_settings) ? dname : "*"];
         let res = null;
         if (name_setting == "is_iframe") {
-            res = d.iframe_flags != null;
+            res = d.if_params != null;
             if (val) {
-                if (d.iframe_flags == null)
-                    d.iframe_flags = d.flags.clone();
+                if (d.if_params == null)
+                    d.if_params = Utils.cloneObject(d.params);
             } else {
-                d.iframe_flags = null;
+                d.if_params = null;
             }
             return res;
         }
         if (name_setting.startsWith("iframe_")) {
             name_setting = name_setting.substr("iframe_".length);
-            if (d.iframe_flags == null) {
-                res = d.flags.obj[name_setting];
-                d.flags.obj = [name_setting, val];
+            let params;
+            if (d.if_params != null)
+                params = d.if_params;
+            else
+                params = d.params;
+            if (name_setting == "block_list") {
+                res = params.bl.text;
+                params.bl.text = val;
             } else {
-                res = d.iframe_flags.obj[name_setting];
-                d.iframe_flags.obj = [name_setting, val];
+                res = params.f.obj[name_setting];
+                params.f.obj = [name_setting, val];
             }
         } else {
-            if (name_setting in d.flags.obj) {
-                res = d.flags.obj[name_setting];
-                d.flags.obj = [name_setting, val];
+            if (name_setting in d.params.f.obj) {
+                res = d.params.f.obj[name_setting];
+                d.params.f.obj = [name_setting, val];
+            } else if (name_setting == "block_list") {
+                res = d.params.bl.text;
+                d.params.bl.text = val;
             } else {
                 res = d[name_setting];
                 d[name_setting] = val;
                 if (name_setting == "user_agents") {
-                    if (dname in domain_settings) { 
+                    if (dname in domain_settings) {
                         domain_data[dname].ua = undefined;
                     } else { //is used default settings
                         for (let i in domain_data)
@@ -391,25 +474,32 @@ function Domains() {
         let dname = _get_dname(url);
         let d = domain_settings[(dname in domain_settings) ? dname : "*"];
         if (name_setting == "is_iframe")
-            return d.iframe_flags != null;
+            return d.if_params != null;
         if (name_setting.startsWith("iframe_")) {
             name_setting = name_setting.substr("iframe_".length);
-            if (d.iframe_flags == null)
-                return d.flags.obj[name_setting];
+            if (d.if_params != null)
+                params = d.if_params;
             else
-                return d.iframe_flags.obj[name_setting];
+                params = d.params;
+            if (name_setting == "block_list") {
+                return params.bl.text;
+            } else {
+                return params.f.obj[name_setting];
+            }
         }
-        if (name_setting in d.flags.obj)
-            return d.flags.obj[name_setting];
+        if (name_setting in d.params.f.obj)
+            return d.params.f.obj[name_setting];
+        else if (name_setting == "block_list")
+            return d.params.bl.text;
         return d[name_setting];
     }
 
     this.getAllSettings = function (url) {
         let dn = _get_dname(url);
         let d = domain_settings[(dn in domain_settings) ? dn : "*"];
-        if (_isiframe(url) && d.iframe_flags != null)
-            return { f: d.iframe_flags.obj, ua: d.user_agents };
-        return { f: d.flags.obj, ua: d.user_agents };
+        if (_isiframe(url) && d.if_params != null)
+            return { f: d.if_params.f.obj, fn: d.if_params.f.num, bl: d.if_params.bl, ua: d.user_agents };
+        return { f: d.params.f.obj, fn: d.params.f.num, bl: d.params.bl, ua: d.user_agents };
     }
 
     this.deleteIndiSettings = function (url) { delete domain_settings[_get_dname(url)]; }
@@ -423,10 +513,13 @@ function Domains() {
             false,
             false,
             function (obj) {
-            if (obj instanceof BitField)
-                return "(parseBitField(" + obj.num.toString() + "))";
-            return null;
-        });
+                if (obj instanceof BitField)
+                    return "(parseBitField(" + obj.num.toString() + "))";
+                if (obj instanceof BlockList)
+                    return "(parseBlockList(\"" + obj.text.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n|\r/g, "\\n") + "\"))";
+                return null;
+            }
+        );
     }
     this.getSettingsForContentScript = function (sender) {
         let tab = sender.tab;
@@ -438,10 +531,10 @@ function Domains() {
         let is_iframe = _isiframe(sender);
         let settings = domain_settings[(dname in domain_settings) ? dname : "*"];
         let flags;
-        if (is_iframe && settings.iframe_flags != null)
-            flags = settings.iframe_flags;
+        if (is_iframe && settings.if_params != null)
+            flags = settings.if_params.f;
         else
-            flags = settings.flags;
+            flags = settings.params.f;
         if (flags.obj.randomize_each) {
             domains.delete(sender);
             domain = domains.get(sender);
@@ -465,8 +558,8 @@ function Domains() {
             domain.hardw_concur,
             is_iframe,
             ((current_update_tab != -1) && (current_update_tab == tab.id)),
-            (is_iframe && settings.iframe_flags != null)? settings.iframe_flags.num: settings.flags.num,
-            (settings.iframe_flags == null)? settings.flags.num: settings.iframe_flags.num
+            (is_iframe && settings.if_params != null) ? settings.if_params.f.num : settings.params.f.num,
+            (settings.if_params == null) ? settings.params.f.num : settings.if_params.f.num
         ];
     }
 }
@@ -710,7 +803,9 @@ function onBeforeSendHeaders(info) {
 
     if (settings.f.disable_cache_strong && is_main_frame)
         chrome.browsingData.removeCache({});
-
+    if(settings.bl.isBlock(info.url))
+        return { cancel: true };
+  
     let is_set_cache_control = settings.f.send_no_cache, is_set_pragma = settings.f.send_no_cache, is_set_connection_close = settings.f.connection_close;
     for (let pos = 0; pos < info.requestHeaders.length; pos++) {
         let HeaderName = info.requestHeaders[pos].name.toLowerCase();

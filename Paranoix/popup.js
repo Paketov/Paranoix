@@ -268,6 +268,14 @@ window.addEventListener(
                                 for (let i = 0; i < labels.length; i++) {
                                     labels[i].htmlFor = "iframe_" + labels[i].htmlFor;
                                 }
+                                let textareas = cloned_tab.getElementsByTagName("textarea");
+                                for (let i = 0; i < textareas.length; i++) {
+                                    textareas[i].id = "iframe_" + textareas[i].id;
+                                }
+                                let buttons = cloned_tab.getElementsByTagName("button");
+                                for (let i = 0; i < buttons.length; i++) {
+                                    buttons[i].id = "iframe_" + buttons[i].id;
+                                }
                                 cloned_tab.style.display = "none";
                                 $("main_tab").parentElement.appendChild(cloned_tab);
                             }
@@ -303,6 +311,23 @@ window.addEventListener(
                             }, function (response) {
                                 //$("user_agents").value = response.val.join("\n");
                             });
+
+                            bindBackgroundSettings(
+                                "Settings",
+                                "block_list_set",
+                                function (r) {
+                                    return { val: $("block_list").value, settings_name: "block_list" };
+                                },
+                                function (response) {}
+                            );
+                            bindBackgroundSettings(
+                                "Settings",
+                                "iframe_block_list_set",
+                                function (r) {
+                                    return { val: $("iframe_block_list").value, settings_name: "iframe_block_list" };
+                                },
+                                function (response) { }
+                            );
 
                             bindBackgroundSettings("clearStorageForThisSite", "storage_clear", function (r) {
                                 return {
@@ -360,6 +385,7 @@ window.addEventListener(
                             bindBackgroundSettings("send_no_cache");
                             bindBackgroundSettings("clear_plugin_list");
                             bindBackgroundSettings("disable_popup");
+                            bindBackgroundSettings("use_direct_url2");
 
                             bindBackgroundSettings("is_iframe");
 
@@ -394,8 +420,16 @@ window.addEventListener(
                             bindBackgroundSettings("iframe_send_no_cache");
                             bindBackgroundSettings("iframe_clear_plugin_list");
                             bindBackgroundSettings("iframe_disable_popup");
+                            bindBackgroundSettings("iframe_use_direct_url2");
                             setOrGetSetting("user_agents", null,  function (r) {
                                 $("user_agents").value = r.join("\n");
+                            });
+
+                            setOrGetSetting("block_list", null, function (r) {
+                                $("block_list").value = r;
+                            });
+                            setOrGetSetting("iframe_block_list", null, function (r) {
+                                $("iframe_block_list").value = r;
                             });
                         }
                     );

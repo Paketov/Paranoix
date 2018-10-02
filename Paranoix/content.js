@@ -580,27 +580,54 @@
                         }
                     });
                 }
-                if((flags&(1 << 16))&&win.document) {
+                if ((flags & ((1 << 16) | (1 << 30))) && win.document) {
+                    var extractUrlFromAwayUrl = function (away_url) {
+                        let url;
+                        try { url = new URL(away_url); } catch (e) { return null; }
+                        let si = url.searchParams.entries();
+                        for (let i = si.next() ; !i.done; i = si.next()) {
+                            let v = i.value[1];
+                            if (/^(https|http):\/\//i.test(v) && isURL(v)) return v;
+                            try {
+                                let eurl = atob(v);
+                                if (/^(https|http):\/\//i.test(eurl) && isURL(eurl)) return eurl;
+                            } catch (e) { }
+                        }
+                        try {
+                            let pn = url.pathname.search(/https|http/i);
+                            if (pn != -1) {
+                                pn = url.pathname.substr(pn);
+                                pn = decodeURIComponent(pn.match(/[%a-zA-Z0-9.]*/)[0])
+                                if (isURL(pn))
+                                    return pn;
+                            }
+                        } catch (e) { }
+                        return null;
+                    }
                     var window_open = win.open;
-                    var eventHandler = function (e) {
+                    var globalClickEventHandler = function (e) {
                         let targetElem = e.target;
                         if (targetElem.nodeName.toLowerCase() == "a" || ((targetElem = targetElem.parentNode) && targetElem.nodeName.toLowerCase() == "a")) {
                             let href = targetElem.href;
-                            let innerText = targetElem.innerText;
                             let locationTopDomain = self_domain;
                             let targetUrl = null;
-                            if (isURL(innerText) && !/^((((\w|\d)((\w|\d|-)*(\w|\d))?\.)+(\w|\d)+)|localhost|((\d{1,3}\.){3}\d{1,3}))$/i.test(innerText) && !innerText.endsWith("...")) {
-                                if (!/^(https|http):\/\//i.test(innerText))
-                                    innerText = "http://" + innerText;
-                                if (topDomainFromURL(innerText) != locationTopDomain) {
-                                    targetElem.href = innerText;
-                                    targetUrl = innerText;
+                            if (flags&(1<<30))
+                                targetUrl = extractUrlFromAwayUrl(href);
+                            if ((targetUrl == null) && (flags&(1 << 16))) {
+                                let innerText = targetElem.innerText;
+                                if (isURL(innerText) && !/^((((\w|\d)((\w|\d|-)*(\w|\d))?\.)+(\w|\d)+)|localhost|((\d{1,3}\.){3}\d{1,3}))$/i.test(innerText) && !innerText.endsWith("...")) {
+                                    if (!/^(https|http):\/\//i.test(innerText))
+                                        innerText = "http://" + innerText;
+                                    if (topDomainFromURL(innerText) != locationTopDomain) {
+                                        targetElem.href = innerText;
+                                        targetUrl = innerText;
+                                    }
                                 }
-                            }
-                            if (targetUrl == null && typeof (href) == "string" && isURL(href)) {
-                                if (topDomainFromURL(href) == locationTopDomain)
-                                    return;
-                                targetUrl = href;
+                                if (targetUrl == null && typeof (href) == "string" && isURL(href)) {
+                                    if (topDomainFromURL(href) == locationTopDomain)
+                                        return;
+                                    targetUrl = href;
+                                }
                             }
                             if (targetUrl != null) {
                                 e.preventDefault();
@@ -617,9 +644,9 @@
                             }
                         }
                     };
-                    win.document.addEventListener("mousedown", eventHandler, true);
-                    win.document.addEventListener("mouseup", eventHandler, true);
-                    win.document.addEventListener("click", eventHandler, true);
+                    win.document.addEventListener("mousedown", globalClickEventHandler, true);
+                    win.document.addEventListener("mouseup", globalClickEventHandler, true);
+                    win.document.addEventListener("click", globalClickEventHandler, true);
                     var originalWindowListener = win.addEventListener;
                     win.addEventListener = function addEventListener(type, handler, is_top) {
                         if (type == "unload") {

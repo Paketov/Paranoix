@@ -8,7 +8,7 @@
         }
 
         /*button*/
-        button, input[type="button"] {
+       button, input[type="button"] {
             background-color: #5AA6ED;
             color: #ffffff !important;
             -webkit-appearance: none;
@@ -83,6 +83,9 @@
                     <label for="tab" id="tab_label">Main frame</label>
                 </legend>
                 <div id="main_tab" style="display:block">
+                    <textarea id="block_list" placeholder="Enter url block-list:" style="width: 100%;"></textarea>
+                    <button id="block_list_set" style="width: 70%;">Set block-list</button>
+                    <br /><div style="height: 3px;"></div>
                     <div>
                         <input type="checkbox" id="use_only_en_lang" checked>
                         <label for="use_only_en_lang">Use only english lang</label>
@@ -169,7 +172,11 @@
                     </div>
                     <div>
                         <input type="checkbox" id="use_direct_url" checked>
-                        <label for="use_direct_url">Use direct URL</label>
+                        <label for="use_direct_url">Use direct URL(extract from text)</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="use_direct_url2" checked>
+                        <label for="use_direct_url2">Use direct URL(extract from href)</label> <!-- extract real target URL from href-->
                     </div>
                     <div>
                         <input type="checkbox" id="randomize_each" checked>
